@@ -1,7 +1,7 @@
 import disnake
 from disnake import TextInputStyle
 
-from discord.discord_static import get_game_emojis
+from discord_util.discord_static import get_game_emojis
 from sql.sql_manager import extraDBConnect
 
 class insertPoemModal(disnake.ui.Modal):

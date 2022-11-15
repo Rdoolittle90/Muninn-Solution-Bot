@@ -1,6 +1,6 @@
 import disnake
 
-from discord.discord_static import get_game_emojis
+from discord_util.discord_static import get_game_emojis
 
 class optionsModal(disnake.ui.Modal):
     def __init__(self, inter, bot) -> None:

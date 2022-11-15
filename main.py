@@ -2,34 +2,30 @@ from os import getenv
 
 from dotenv import load_dotenv
 
-from discord import Intents
-from discord.ext.commands import when_mentioned
-from discord import ApplicationCommandInteraction
+from disnake import Intents
+from disnake import Embed
 
-from discord.interactions.embeds import bot_shutdown
-from discord.interactions.embeds import display_funds
-from discord.interactions.embeds import display_org
-from discord.interactions.embeds import display_poem
-from discord.interactions.embeds import embed_members
-from discord.interactions.embeds import display_user
 
-from discord.admin.update_roles import update_roles as ms_update_roles
-from discord.admin.update_nicks import update_nicks as ms_update_nicks
-from discord.admin.update_org import update_org as ms_update_org
+from disnake.ext.commands import when_mentioned
+from disnake import ApplicationCommandInteraction
+from discord_util.admin.select_registered import select_registered_members
 
-from discord.error_handling import error_handling
+from discord_util.interactions.embeds import bot_shutdown
 
-from discord.modals.embedder import embedderModal
-from discord.modals.insertPoem import insertPoemModal
-from discord.modals.register import registerModal
-
-from discord.discord_static import MyClient
+from discord_util.discord_static import MyClient
 
 from sql.sql_manager import DBConnect
+from sql.sql_queries import *
 
+from discord_util.admin.update_discord_members import update_discord_members
+from discord_util.admin.update_scusers import update_scsusers
+from discord_util.admin.update_org import update_org
+
+from support.create_db import create_db
 
 def main():
     load_dotenv()
+
     GUILD = int(getenv("DISCORD_GUILD"))
     
     # setup intents for bot permissions
@@ -49,89 +45,81 @@ def main():
     # default_member_permissions=8 is the same as saying only available to admins
 # ADMIN COMMANDS =========================================================================================
     @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
-    async def update_nicks(interaction: ApplicationCommandInteraction):
-        """Admin command tp update all users nicknames to match their SC Handle"""
-        await ms_update_nicks(interaction, bot)
+    async def update_database_discordmembers(interaction: ApplicationCommandInteraction):
+        """updates the discordmembers sql table"""
+        await interaction.response.defer(with_message=True, ephemeral=True)
+        members_added = await update_discord_members(interaction)
+        await interaction.followup.send(f"**Task Complete**\nMembers Added: `{members_added}`")
+
 
     @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
-    async def update_roles(interaction: ApplicationCommandInteraction):
-        """Admin Command to update all users roles to match the SC Roster"""
-        await ms_update_roles(interaction, bot)
+    async def update_database_orgmembers(interaction: ApplicationCommandInteraction, sid: str):
+        """updates the orgmembers sql table"""
+        await interaction.response.defer(with_message=True, ephemeral=True)
+        update_scsusers(interaction, sid)
+        await interaction.followup.send(f"**Task Complete**")
+
 
     @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
-    async def update_org(interaction: ApplicationCommandInteraction):
-        """Admin Command to update the org details"""
-        await ms_update_org(interaction)
-    
-    @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
-    async def event_embed(interaction: ApplicationCommandInteraction):
-        """create an event embed testing"""
-        await interaction.response.send_modal(modal=embedderModal(interaction))
+    async def update_database_org(interaction: ApplicationCommandInteraction, sid: str):
+        """updates the org sql table"""
+        await interaction.response.defer(with_message=True, ephemeral=True)
+        update_org(interaction, sid)
+        await interaction.followup.send(f"**Task Complete**")
+
 
     @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
-    async def add_poem(interaction: ApplicationCommandInteraction):
-        """adds a poem to the extras db"""
-        await interaction.response.send_modal(modal=insertPoemModal())
+    async def test_registered_members(interaction: ApplicationCommandInteraction, sid: str, public = False):
+        """dgfxdfg"""
+        await interaction.response.defer(with_message=True, ephemeral=(not public))
+        query_results = select_registered_members(interaction, sid)
+        embed = Embed(title=f"registered members of {sid}", description="a description here")
+        member_string = ""
+        print(query_results)
+        if len(query_results) > 0:
+            last = query_results[0][2]
+            for entry in query_results:
+                org = entry[2]
+                stars = entry[5] * "⭐"
+                blk_squares = (5 - entry[5]) * "⬛"
+
+                if org == last:
+                    member_string += "{}{} `{: ^20}` `{: ^20}` `{}`\n".format(
+                        blk_squares, stars, entry[4], entry[1], entry[6].strftime("%m/%d/%Y")
+                    )
+
+                else:
+                    embed.add_field(name=last, value=member_string, inline=False)
+                    member_string = "{}{} `{: ^20}` `{: ^20}` `{}`\n".format(
+                        blk_squares, stars, entry[4], entry[1], entry[6].strftime("%m/%d/%Y")
+                    )
+                    last = entry[2]
+            if sid != "all":
+                embed.add_field(name=last, value=member_string, inline=False)
+            await interaction.followup.send(embed=embed, ephemeral=(not public))
+        else:
+            await interaction.followup.send("Nothing found", ephemeral=(not public))
+
+
 
     @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
     async def kill(interaction: ApplicationCommandInteraction):
-        """
-            Kill the bot ending the program, requires manual reboot
-        """
+        """Kill the bot 🗡️🤖 requires manual reboot"""
         await interaction.send(embed=bot_shutdown(interaction))
-        await interaction.client.close()
+        await interaction.client.close()  # Throws a RuntimeError noisey but seems to have no ill effect   #FIXME
 
-# @everyone COMMANDS =========================================================================================
 
-    @bot.slash_command(guild_ids=[GUILD])
-    async def register(interaction: ApplicationCommandInteraction):
-        """Register by linking your Star Citizen Handle to your discord id"""
-        await interaction.response.send_modal(modal=registerModal(interaction, bot))
+# @everyone COMMANDS ======================================================================================
+    @bot.slash_command(guild_ids=[GUILD], default_member_permissions=8)
+    async def run_sql(interaction: ApplicationCommandInteraction):
+        """tests """
+        await interaction.response.defer(with_message=True, ephemeral=True)
+        await interaction.followup.send(f"**Task Complete**")
 
-    @bot.slash_command(guild_ids=[GUILD])
-    async def poem(interaction: ApplicationCommandInteraction, is_public=False):
-        """displays a random poem."""
-        await interaction.response.send_message(embed=display_poem(), ephemeral=not is_public)
+# REGISTERED COMMANDS =====================================================================================
 
-# REGISTERED COMMANDS ====================================================================================
 
-    @bot.slash_command(guild_ids=[GUILD])
-    async def roster(interaction: ApplicationCommandInteraction, is_public: bool = False):
-        """Display The Muninn Solutions Roster"""
-        is_ephemeral = not is_public
-        sql = DBConnect()
-        await interaction.response.defer(ephemeral=is_ephemeral)
-        guild = sql.select_org("MUNINNSOL")
-        members = sql.select_muninn_members("all")
-        await interaction.followup.send(content="᲼")
-        await embed_members(interaction, bot, guild, members)
-
-        ## this is disabled due to some bug with Select list modals
-        ## if fixed move above logic into rosterModal() and uncomment then remove this note
-        #await interaction.response.send_modal(modal=rosterModal(bot, is_public))
-
-    @bot.slash_command(guild_ids=[GUILD])
-    async def lookup(interaction: ApplicationCommandInteraction, handle:str = None):
-        """Lookup a users player handle"""
-        await display_user(interaction, handle)
-
-    @bot.slash_command(guild_ids=[GUILD])
-    async def org_lookup(interaction: ApplicationCommandInteraction, handle:str = None):
-        """Lookup an org by its SID"""
-        await display_org(interaction, handle)
-
-    @bot.slash_command(guild_ids=[GUILD])
-    async def funds(interaction: ApplicationCommandInteraction):
-        """Display the latest report via the api on funds raised"""
-        await display_funds(interaction)
-
-# ERROR EVENT ============================================================================================
-
-    @bot.event
-    async def on_command_error(interaction, error):
-        """Handle errors if possible"""
-        error_handling(interaction, error)
-
+# START THE BOT ===========================================================================================
     # start the bot loop
     bot.run(getenv("DISCORD_TOKEN"))
 
@@ -152,4 +140,5 @@ made by {getenv("APP_CREATOR")}
 
 if __name__ == "__main__":
     display_title()
+    create_db()
     main()

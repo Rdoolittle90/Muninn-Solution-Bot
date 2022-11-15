@@ -8,8 +8,8 @@ from disnake import ModalInteraction
 from os import getenv
 from dotenv import load_dotenv
 
-from discord.interactions.embeds import embed_members
-from discord.discord_static import MyClient
+from discord_util.interactions.embeds import embed_members
+from discord_util.discord_static import MyClient
 from sql.sql_manager import DBConnect
 
 load_dotenv()

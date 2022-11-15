@@ -1,8 +1,8 @@
 import random
-from discord import ApplicationCommandInteraction
-from discord.errors import Forbidden
+from disnake import ApplicationCommandInteraction
+from disnake.errors import Forbidden
 
-from discord.discord_static import MyClient
+from discord_util.discord_static import MyClient
 from sql.sql_manager import DBConnect
 
 from datetime import datetime
@@ -10,14 +10,14 @@ from datetime import timedelta
 
 
 def get_holiday_index():
-    todays_date = datetime.today()
-    todays_year = todays_date.strftime("%y")
+    todays_year = datetime.today().strftime("%y")
     
     date_fmt = "%y-%m-%d"
     holidays = [
         datetime.strptime(f"{todays_year}-10-31", date_fmt).timetuple().tm_yday, # halloween
         datetime.strptime(f"{todays_year}-11-24", date_fmt).timetuple().tm_yday, # thanksgiving
-        datetime.strptime(f"{todays_year}-12-25", date_fmt).timetuple().tm_yday  # christmas
+        datetime.strptime(f"{todays_year}-12-25", date_fmt).timetuple().tm_yday, # christmas
+        datetime.strptime(f"{todays_year}-12-31", date_fmt).timetuple().tm_yday  # new years
     ]
 
     day_of_year = datetime.now().timetuple().tm_yday
@@ -43,7 +43,6 @@ async def update_nicks(interaction: ApplicationCommandInteraction, bot: MyClient
     skipped = 0
 
     current_holiday = get_holiday_index()
-    print(current_holiday)
     holiday_emojis = [
         [""],                        # 0 - Blank
         ["🎃", "🦇", "👻", "💀"],  # 1 - Halloween

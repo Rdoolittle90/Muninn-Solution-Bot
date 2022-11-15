@@ -2,7 +2,7 @@ import random
 from disnake import ApplicationCommandInteraction
 from disnake.errors import Forbidden
 
-from discord.discord_static import MyClient
+from discord_util.discord_static import MyClient
 from sql.sql_manager import DBConnect
 from settings import *
 

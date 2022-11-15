@@ -3,7 +3,7 @@ import disnake
 from disnake import Embed
 from disnake import Color
 
-from discord.discord_static import MyClient, get_game_emojis
+from discord_util.discord_static import MyClient, get_game_emojis
 from sql.sc_requests import SCRequester
 from settings import *
 

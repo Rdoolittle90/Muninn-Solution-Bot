@@ -1,8 +1,8 @@
 import disnake
-from disnake.ext import commands
+from disnake.ext.commands import Bot
 
 
-class MyClient(commands.Bot):
+class MyClient(Bot):
 
 
     async def on_ready(self):

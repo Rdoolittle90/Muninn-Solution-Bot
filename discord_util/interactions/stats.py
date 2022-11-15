@@ -1,7 +1,7 @@
 from disnake import ApplicationCommandInteraction
 
-from discord.interactions.embeds import private_stats
-from discord.interactions.embeds import public_stats
+from discord_util.interactions.embeds import private_stats
+from discord_util.interactions.embeds import public_stats
 
 
 async def display_public_player_stats(interaction: ApplicationCommandInteraction, pid: int) -> None:

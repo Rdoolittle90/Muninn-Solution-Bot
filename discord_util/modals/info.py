@@ -4,7 +4,7 @@ from disnake.ui import Select
 from disnake import SelectOption
 from disnake import ModalInteraction
 
-from discord.interactions.embeds import race_info
+from discord_util.interactions.embeds import race_info
 
 
 class infoModal(Modal):

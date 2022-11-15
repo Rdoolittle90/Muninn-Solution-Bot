@@ -3,8 +3,8 @@ import disnake
 from disnake import TextInputStyle
 from disnake import DMChannel
 from disnake import ApplicationCommandInteraction
-from discord.discord_static import get_game_emojis
-from discord.interactions.embeds import embedder
+from discord_util.discord_static import get_game_emojis
+from discord_util.interactions.embeds import embedder
 from sql.sql_manager import extraDBConnect
 
 

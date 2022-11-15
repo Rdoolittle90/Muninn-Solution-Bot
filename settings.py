@@ -1,3 +1,6 @@
+### API URLS
+SC_URL = "http://api.starcitizen-api.com/"
+
 
 ACCESS_LEVELS = ["Access Level 1", "Access Level 2", "Access Level 3"]
 ACCESS_1 = ["Associate", "Senior Associate"]
